@@ -2,7 +2,7 @@ import json
 from io import BytesIO
 
 import pdfplumber
-import anthropic
+import google.generativeai as genai
 
 
 def _clean_json(text: str) -> str:
@@ -27,15 +27,9 @@ def extract_text_from_pdf(file) -> str:
     return text
 
 
-def parse_pdf_to_blood_test(pdf_text: str, client: anthropic.Anthropic) -> list[dict]:
-    """Use Claude to extract structured blood test values from raw PDF text."""
-    response = client.messages.create(
-        model="claude-opus-4-8",
-        max_tokens=4096,
-        messages=[
-            {
-                "role": "user",
-                "content": f"""Extract every blood test value from this lab report. Do not skip any measurable result.
+def parse_pdf_to_blood_test(pdf_text: str, model: genai.GenerativeModel) -> list[dict]:
+    """Use Gemini to extract structured blood test values from raw PDF text."""
+    prompt = f"""Extract every blood test value from this lab report. Do not skip any measurable result.
 
 Lab report text:
 {pdf_text}
@@ -47,9 +41,6 @@ For each test value found:
   unit            : unit of measurement (e.g. mg/dL, g/dL, K/uL, %)
   reference_range : the normal range shown in the report (e.g. "13.5-17.5"), or "not provided"
 
-[{{"name": "...", "value": "...", "unit": "...", "reference_range": "..."}}]""",
-            }
-        ],
-    )
-    raw = response.content[0].text
-    return json.loads(_clean_json(raw))
+[{{"name": "...", "value": "...", "unit": "...", "reference_range": "..."}}]"""
+    response = model.generate_content(prompt)
+    return json.loads(_clean_json(response.text))

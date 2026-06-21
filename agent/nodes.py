@@ -1,5 +1,5 @@
 import json
-import anthropic
+import google.generativeai as genai
 
 from .state import BloodTestState
 
@@ -14,16 +14,9 @@ def _clean_json(text: str) -> str:
     return text.strip()
 
 
-def create_categorize_node(client: anthropic.Anthropic):
+def create_categorize_node(model: genai.GenerativeModel):
     def categorize_values(state: BloodTestState) -> dict:
-        response = client.messages.create(
-            model="claude-opus-4-8",
-            max_tokens=1024,
-            thinking={"type": "adaptive"},
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"""You are a medical laboratory expert. Categorize these blood test values by body system.
+        prompt = f"""You are a medical laboratory expert. Categorize these blood test values by body system.
 
 Blood test results:
 {json.dumps(state["raw_results"], indent=2)}
@@ -31,18 +24,15 @@ Blood test results:
 Group test names into categories such as: Complete Blood Count, Metabolic Panel, Liver Function, Kidney Function, Lipid Panel, Thyroid, Vitamins & Minerals, Blood Sugar, Other.
 
 Output ONLY valid JSON — no prose, no markdown fences:
-{{"Category Name": ["Test Name 1", "Test Name 2"], ...}}""",
-                }
-            ],
-        )
-        text = next(b.text for b in response.content if b.type == "text")
-        categorized = json.loads(_clean_json(text))
+{{"Category Name": ["Test Name 1", "Test Name 2"], ...}}"""
+        response = model.generate_content(prompt)
+        categorized = json.loads(_clean_json(response.text))
         return {"categorized_values": categorized}
 
     return categorize_values
 
 
-def create_explain_node(client: anthropic.Anthropic):
+def create_explain_node(model: genai.GenerativeModel):
     def explain_values(state: BloodTestState) -> dict:
         p = state["patient_context"]
         patient_desc = f"{p.get('age', 'unknown age')} year old {p.get('sex', 'person')}"
@@ -53,14 +43,7 @@ def create_explain_node(client: anthropic.Anthropic):
         if p.get("symptoms"):
             patient_desc += f", current concerns: {', '.join(p['symptoms'])}"
 
-        response = client.messages.create(
-            model="claude-opus-4-8",
-            max_tokens=8192,
-            thinking={"type": "adaptive"},
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"""You are a compassionate doctor explaining blood test results to a patient in plain English.
+        prompt = f"""You are a compassionate doctor explaining blood test results to a patient in plain English.
 
 Patient: {patient_desc}
 
@@ -86,19 +69,16 @@ Output ONLY a valid JSON array — no prose, no markdown fences:
 attention_level guide:
 - none: result is within or acceptably close to range, no action needed
 - watch: borderline or trending; worth monitoring at next test
-- discuss: meaningfully outside range or clinically significant given their context""",
-                }
-            ],
-        )
-        text = next(b.text for b in response.content if b.type == "text")
-        explanations = json.loads(_clean_json(text))
+- discuss: meaningfully outside range or clinically significant given their context"""
+        response = model.generate_content(prompt)
+        explanations = json.loads(_clean_json(response.text))
         risk_flags = [e for e in explanations if e.get("attention_level") in ("watch", "discuss")]
         return {"explanations": explanations, "risk_flags": risk_flags}
 
     return explain_values
 
 
-def create_summary_node(client: anthropic.Anthropic):
+def create_summary_node(model: genai.GenerativeModel):
     def generate_summary(state: BloodTestState) -> dict:
         p = state["patient_context"]
         patient_desc = f"{p.get('age', 'unknown')} year old {p.get('sex', 'person')}"
@@ -107,13 +87,7 @@ def create_summary_node(client: anthropic.Anthropic):
         watch_count = sum(1 for e in state["explanations"] if e.get("attention_level") == "watch")
         normal_count = sum(1 for e in state["explanations"] if e.get("attention_level") == "none")
 
-        response = client.messages.create(
-            model="claude-opus-4-8",
-            max_tokens=2048,
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"""You are a compassionate doctor giving a patient the "big picture" from their blood test.
+        prompt = f"""You are a compassionate doctor giving a patient the "big picture" from their blood test.
 
 Patient: {patient_desc}
 Results breakdown: {normal_count} values look good, {watch_count} to monitor, {discuss_count} to discuss with doctor.
@@ -130,12 +104,9 @@ Write:
    Make them actionable (e.g. "Ask whether your borderline iron levels could explain your fatigue").
 
 Output ONLY valid JSON — no prose, no markdown fences:
-{{"overall_summary": "...", "action_items": ["question 1", "question 2", ...]}}""",
-                }
-            ],
-        )
-        text = next(b.text for b in response.content if b.type == "text")
-        result = json.loads(_clean_json(text))
+{{"overall_summary": "...", "action_items": ["question 1", "question 2", ...]}}"""
+        response = model.generate_content(prompt)
+        result = json.loads(_clean_json(response.text))
         return {
             "overall_summary": result["overall_summary"],
             "action_items": result["action_items"],
