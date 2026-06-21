@@ -7,7 +7,7 @@ from .nodes import create_categorize_node, create_explain_node, create_summary_n
 
 def create_graph(gemini_api_key: str):
     genai.configure(api_key=gemini_api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-2.0-flash")
 
     graph = StateGraph(BloodTestState)
 

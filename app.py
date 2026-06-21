@@ -116,7 +116,7 @@ with upload_tab:
                     try:
                         pdf_text = extract_text_from_pdf(BytesIO(uploaded.read()))
                         genai.configure(api_key=api_key_input)
-                        model = genai.GenerativeModel("gemini-1.5-flash")
+                        model = genai.GenerativeModel("gemini-2.0-flash")
                         raw_results = parse_pdf_to_blood_test(pdf_text, model)
                         st.success(f"Extracted {len(raw_results)} values from PDF.")
                     except ValueError as e:
