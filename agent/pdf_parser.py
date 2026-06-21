@@ -2,7 +2,9 @@ import json
 from io import BytesIO
 
 import pdfplumber
-import google.generativeai as genai
+from groq import Groq
+
+MODEL = "llama-3.3-70b-versatile"
 
 
 def _clean_json(text: str) -> str:
@@ -27,8 +29,8 @@ def extract_text_from_pdf(file) -> str:
     return text
 
 
-def parse_pdf_to_blood_test(pdf_text: str, model: genai.GenerativeModel) -> list[dict]:
-    """Use Gemini to extract structured blood test values from raw PDF text."""
+def parse_pdf_to_blood_test(pdf_text: str, client: Groq) -> list[dict]:
+    """Use Groq to extract structured blood test values from raw PDF text."""
     prompt = f"""Extract every blood test value from this lab report. Do not skip any measurable result.
 
 Lab report text:
@@ -42,5 +44,8 @@ For each test value found:
   reference_range : the normal range shown in the report (e.g. "13.5-17.5"), or "not provided"
 
 [{{"name": "...", "value": "...", "unit": "...", "reference_range": "..."}}]"""
-    response = model.generate_content(prompt)
-    return json.loads(_clean_json(response.text))
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return json.loads(_clean_json(response.choices[0].message.content))

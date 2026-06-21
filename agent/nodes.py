@@ -1,7 +1,9 @@
 import json
-import google.generativeai as genai
+from groq import Groq
 
 from .state import BloodTestState
+
+MODEL = "llama-3.3-70b-versatile"
 
 
 def _clean_json(text: str) -> str:
@@ -14,7 +16,7 @@ def _clean_json(text: str) -> str:
     return text.strip()
 
 
-def create_categorize_node(model: genai.GenerativeModel):
+def create_categorize_node(client: Groq):
     def categorize_values(state: BloodTestState) -> dict:
         prompt = f"""You are a medical laboratory expert. Categorize these blood test values by body system.
 
@@ -25,14 +27,18 @@ Group test names into categories such as: Complete Blood Count, Metabolic Panel,
 
 Output ONLY valid JSON — no prose, no markdown fences:
 {{"Category Name": ["Test Name 1", "Test Name 2"], ...}}"""
-        response = model.generate_content(prompt)
-        categorized = json.loads(_clean_json(response.text))
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = response.choices[0].message.content
+        categorized = json.loads(_clean_json(text))
         return {"categorized_values": categorized}
 
     return categorize_values
 
 
-def create_explain_node(model: genai.GenerativeModel):
+def create_explain_node(client: Groq):
     def explain_values(state: BloodTestState) -> dict:
         p = state["patient_context"]
         patient_desc = f"{p.get('age', 'unknown age')} year old {p.get('sex', 'person')}"
@@ -70,15 +76,19 @@ attention_level guide:
 - none: result is within or acceptably close to range, no action needed
 - watch: borderline or trending; worth monitoring at next test
 - discuss: meaningfully outside range or clinically significant given their context"""
-        response = model.generate_content(prompt)
-        explanations = json.loads(_clean_json(response.text))
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = response.choices[0].message.content
+        explanations = json.loads(_clean_json(text))
         risk_flags = [e for e in explanations if e.get("attention_level") in ("watch", "discuss")]
         return {"explanations": explanations, "risk_flags": risk_flags}
 
     return explain_values
 
 
-def create_summary_node(model: genai.GenerativeModel):
+def create_summary_node(client: Groq):
     def generate_summary(state: BloodTestState) -> dict:
         p = state["patient_context"]
         patient_desc = f"{p.get('age', 'unknown')} year old {p.get('sex', 'person')}"
@@ -105,8 +115,12 @@ Write:
 
 Output ONLY valid JSON — no prose, no markdown fences:
 {{"overall_summary": "...", "action_items": ["question 1", "question 2", ...]}}"""
-        response = model.generate_content(prompt)
-        result = json.loads(_clean_json(response.text))
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        text = response.choices[0].message.content
+        result = json.loads(_clean_json(text))
         return {
             "overall_summary": result["overall_summary"],
             "action_items": result["action_items"],

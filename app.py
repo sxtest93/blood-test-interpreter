@@ -4,7 +4,7 @@ from io import BytesIO
 
 import streamlit as st
 from dotenv import load_dotenv
-import google.generativeai as genai
+from groq import Groq
 
 from agent.graph import create_graph
 from agent.pdf_parser import extract_text_from_pdf, parse_pdf_to_blood_test
@@ -59,10 +59,10 @@ with st.sidebar:
     st.divider()
     st.header("API Key")
     api_key_input = st.text_input(
-        "Google Gemini API key",
-        value=os.getenv("GEMINI_API_KEY", ""),
+        "Groq API key",
+        value=os.getenv("GROQ_API_KEY", ""),
         type="password",
-        help="Stored only in this session. Not sent anywhere except Google.",
+        help="Stored only in this session. Not sent anywhere except Groq.",
     )
 
 
@@ -110,14 +110,13 @@ with upload_tab:
 
         elif uploaded.name.endswith(".pdf"):
             if not api_key_input:
-                st.info("Add your Gemini API key in the sidebar to parse the PDF.")
+                st.info("Add your Groq API key in the sidebar to parse the PDF.")
             else:
                 with st.spinner("Reading PDF..."):
                     try:
                         pdf_text = extract_text_from_pdf(BytesIO(uploaded.read()))
-                        genai.configure(api_key=api_key_input)
-                        model = genai.GenerativeModel("gemini-2.0-flash")
-                        raw_results = parse_pdf_to_blood_test(pdf_text, model)
+                        client = Groq(api_key=api_key_input)
+                        raw_results = parse_pdf_to_blood_test(pdf_text, client)
                         st.success(f"Extracted {len(raw_results)} values from PDF.")
                     except ValueError as e:
                         st.error(str(e))
@@ -157,7 +156,7 @@ run_btn = st.button(
 )
 
 if run_disabled and not api_key_input:
-    st.caption("Add your Gemini API key in the sidebar to run the analysis.")
+    st.caption("Add your Groq API key in the sidebar to run the analysis.")
 elif run_disabled and not raw_results:
     st.caption("Upload a report or enter values manually above.")
 
