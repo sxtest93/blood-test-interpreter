@@ -1,0 +1,22 @@
+[
+  { "name": "Hemoglobin",       "value": "13.1", "unit": "g/dL",   "reference_range": "13.5-17.5" },
+  { "name": "Hematocrit",       "value": "39.4", "unit": "%",       "reference_range": "41-53" },
+  { "name": "WBC",              "value": "7.2",  "unit": "K/uL",   "reference_range": "4.5-11.0" },
+  { "name": "Platelets",        "value": "210",  "unit": "K/uL",   "reference_range": "150-400" },
+  { "name": "RBC",              "value": "4.1",  "unit": "M/uL",   "reference_range": "4.5-5.9" },
+  { "name": "MCV",              "value": "74",   "unit": "fL",      "reference_range": "80-100" },
+  { "name": "Ferritin",         "value": "8",    "unit": "ng/mL",  "reference_range": "20-500" },
+  { "name": "Glucose",          "value": "98",   "unit": "mg/dL",  "reference_range": "70-99" },
+  { "name": "HbA1c",            "value": "5.4",  "unit": "%",       "reference_range": "< 5.7" },
+  { "name": "Total Cholesterol","value": "212",  "unit": "mg/dL",  "reference_range": "< 200" },
+  { "name": "LDL",              "value": "138",  "unit": "mg/dL",  "reference_range": "< 100" },
+  { "name": "HDL",              "value": "52",   "unit": "mg/dL",  "reference_range": "> 40" },
+  { "name": "Triglycerides",    "value": "118",  "unit": "mg/dL",  "reference_range": "< 150" },
+  { "name": "ALT",              "value": "22",   "unit": "U/L",    "reference_range": "7-56" },
+  { "name": "AST",              "value": "28",   "unit": "U/L",    "reference_range": "10-40" },
+  { "name": "Creatinine",       "value": "0.9",  "unit": "mg/dL",  "reference_range": "0.7-1.2" },
+  { "name": "eGFR",             "value": "88",   "unit": "mL/min", "reference_range": "> 60" },
+  { "name": "TSH",              "value": "2.1",  "unit": "mIU/L",  "reference_range": "0.4-4.0" },
+  { "name": "Vitamin D",        "value": "18",   "unit": "ng/mL",  "reference_range": "30-100" },
+  { "name": "Vitamin B12",      "value": "310",  "unit": "pg/mL",  "reference_range": "200-900" }
+]
