@@ -64,7 +64,15 @@ cp .env.example .env
 
 ## Usage
 
-### With a JSON file (recommended)
+### Streamlit UI (recommended)
+
+```bash
+streamlit run app.py
+```
+
+Opens in your browser. Upload a PDF or JSON report, fill in your details in the sidebar, and click **Analyse Blood Test**.
+
+### CLI — with a JSON file
 
 ```bash
 python main.py examples/sample_blood_test.json
@@ -72,7 +80,7 @@ python main.py examples/sample_blood_test.json
 
 The agent asks a few quick questions about you (age, sex, conditions, medications) and returns a full report.
 
-### Interactive entry
+### CLI — interactive entry
 
 ```bash
 python main.py
@@ -154,9 +162,11 @@ langgraph-project/
 │   ├── __init__.py
 │   ├── state.py        # BloodTestState TypedDict
 │   ├── nodes.py        # Node factory functions (closure pattern)
-│   └── graph.py        # StateGraph wiring
+│   ├── graph.py        # StateGraph wiring
+│   └── pdf_parser.py   # PDF text extraction + Claude-powered parsing
 ├── examples/
 │   └── sample_blood_test.json
+├── app.py              # Streamlit UI
 ├── main.py             # CLI entry point + report formatter
 ├── requirements.txt
 ├── .env.example
@@ -178,4 +188,6 @@ langgraph-project/
 |---|---|
 | `anthropic` | Claude Opus 4.8 with adaptive thinking |
 | `langgraph` | Multi-node agent graph orchestration |
+| `streamlit` | Browser UI with file upload and live progress |
+| `pdfplumber` | PDF text extraction |
 | `python-dotenv` | API key loading from `.env` |
