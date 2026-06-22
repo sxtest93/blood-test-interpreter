@@ -60,8 +60,8 @@ def extract_text_from_pdf(file) -> str:
 
 def parse_pdf_to_blood_test(pdf_text: str, client: Groq) -> list[dict]:
     """Use Groq to extract structured blood test values from raw PDF text."""
-    # ~4 chars per token; keep well under the 6000 TPM limit
-    pdf_text = pdf_text[:12000]
+    # keep input + output well under the 6000 TPM limit
+    pdf_text = pdf_text[:5000]
 
     prompt = f"""Extract every blood test value from this lab report. Do not skip any measurable result.
 
@@ -79,6 +79,6 @@ For each test value found:
     response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=4096,
+        max_tokens=2000,
     )
     return json.loads(_extract_json(response.choices[0].message.content))
