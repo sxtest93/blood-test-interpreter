@@ -7,13 +7,19 @@ from groq import Groq
 MODEL = "llama-3.3-70b-versatile"
 
 
-def _clean_json(text: str) -> str:
+def _extract_json(text: str) -> str:
     text = text.strip()
     if text.startswith("```"):
         text = text[text.index("\n") + 1:]
     if text.endswith("```"):
         text = text[: text.rindex("```")]
-    return text.strip()
+    text = text.strip()
+    for start_char, end_char in [("[", "]"), ("{", "}")]:
+        start = text.find(start_char)
+        end = text.rfind(end_char)
+        if start != -1 and end > start:
+            return text[start : end + 1]
+    return text
 
 
 def extract_text_from_pdf(file) -> str:
@@ -47,5 +53,6 @@ For each test value found:
     response = client.chat.completions.create(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
+        max_tokens=4096,
     )
-    return json.loads(_clean_json(response.choices[0].message.content))
+    return json.loads(_extract_json(response.choices[0].message.content))

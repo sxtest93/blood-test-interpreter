@@ -6,14 +6,20 @@ from .state import BloodTestState
 MODEL = "llama-3.3-70b-versatile"
 
 
-def _clean_json(text: str) -> str:
-    """Strip markdown code fences that LLMs sometimes wrap JSON in."""
+def _extract_json(text: str) -> str:
+    """Extract JSON from LLM response, handling code fences and surrounding prose."""
     text = text.strip()
     if text.startswith("```"):
         text = text[text.index("\n") + 1:]
     if text.endswith("```"):
         text = text[: text.rindex("```")]
-    return text.strip()
+    text = text.strip()
+    for start_char, end_char in [("[", "]"), ("{", "}")]:
+        start = text.find(start_char)
+        end = text.rfind(end_char)
+        if start != -1 and end > start:
+            return text[start : end + 1]
+    return text
 
 
 def create_categorize_node(client: Groq):
@@ -30,9 +36,10 @@ Output ONLY valid JSON — no prose, no markdown fences:
         response = client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
+            max_tokens=1024,
         )
         text = response.choices[0].message.content
-        categorized = json.loads(_clean_json(text))
+        categorized = json.loads(_extract_json(text))
         return {"categorized_values": categorized}
 
     return categorize_values
@@ -79,9 +86,10 @@ attention_level guide:
         response = client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
+            max_tokens=8192,
         )
         text = response.choices[0].message.content
-        explanations = json.loads(_clean_json(text))
+        explanations = json.loads(_extract_json(text))
         risk_flags = [e for e in explanations if e.get("attention_level") in ("watch", "discuss")]
         return {"explanations": explanations, "risk_flags": risk_flags}
 
@@ -118,9 +126,10 @@ Output ONLY valid JSON — no prose, no markdown fences:
         response = client.chat.completions.create(
             model=MODEL,
             messages=[{"role": "user", "content": prompt}],
+            max_tokens=2048,
         )
         text = response.choices[0].message.content
-        result = json.loads(_clean_json(text))
+        result = json.loads(_extract_json(text))
         return {
             "overall_summary": result["overall_summary"],
             "action_items": result["action_items"],
