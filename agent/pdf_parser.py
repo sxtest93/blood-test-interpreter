@@ -8,17 +8,40 @@ MODEL = "llama-3.3-70b-versatile"
 
 
 def _extract_json(text: str) -> str:
+    """Extract the first complete JSON object or array from LLM response."""
     text = text.strip()
-    if text.startswith("```"):
-        text = text[text.index("\n") + 1:]
-    if text.endswith("```"):
-        text = text[: text.rindex("```")]
+    if "```" in text:
+        parts = text.split("```")
+        for part in parts[1::2]:
+            if part.startswith(("json", "\n")):
+                text = part[part.index("\n") + 1:] if "\n" in part else part
+                break
+        else:
+            text = parts[1] if len(parts) > 1 else text
     text = text.strip()
     for start_char, end_char in [("[", "]"), ("{", "}")]:
         start = text.find(start_char)
-        end = text.rfind(end_char)
-        if start != -1 and end > start:
-            return text[start : end + 1]
+        if start == -1:
+            continue
+        depth, in_str, escape = 0, False, False
+        for i, ch in enumerate(text[start:], start):
+            if escape:
+                escape = False
+                continue
+            if ch == "\\" and in_str:
+                escape = True
+                continue
+            if ch == '"':
+                in_str = not in_str
+                continue
+            if in_str:
+                continue
+            if ch == start_char:
+                depth += 1
+            elif ch == end_char:
+                depth -= 1
+                if depth == 0:
+                    return text[start : i + 1]
     return text
 
 
