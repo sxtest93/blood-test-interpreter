@@ -3,7 +3,7 @@ from groq import Groq
 
 from .state import BloodTestState
 
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "llama-3.1-8b-instant"
 
 
 def _extract_json(text: str) -> str:
