@@ -60,6 +60,9 @@ def extract_text_from_pdf(file) -> str:
 
 def parse_pdf_to_blood_test(pdf_text: str, client: Groq) -> list[dict]:
     """Use Groq to extract structured blood test values from raw PDF text."""
+    # ~4 chars per token; keep well under the 6000 TPM limit
+    pdf_text = pdf_text[:12000]
+
     prompt = f"""Extract every blood test value from this lab report. Do not skip any measurable result.
 
 Lab report text:
