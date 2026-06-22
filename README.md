@@ -10,7 +10,7 @@ This agent reads your full blood panel and returns a plain-English report — pe
 
 ## How It Works
 
-The agent is built with [LangGraph](https://github.com/langchain-ai/langgraph) and runs Claude Opus 4.8 with adaptive thinking. It processes your results in three stages:
+The agent is built with [LangGraph](https://github.com/langchain-ai/langgraph) and powered by Llama 3.3 70B via Groq. It processes your results in three stages:
 
 ```
 START
@@ -24,7 +24,7 @@ categorize_values
 explain_values
   For every value: what it measures, what your result means
   for YOU specifically, what can affect it, whether to act.
-  Uses extended thinking to reason across the full panel.
+  Reasons across the full panel with patient-specific context.
   │
   ▼
 generate_summary
@@ -41,7 +41,7 @@ Each node returns only the state keys it updates — clean separation, easy to e
 
 ## Setup
 
-**Requirements:** Python 3.11+, an [Anthropic API key](https://console.anthropic.com/).
+**Requirements:** Python 3.11+, a [Groq API key](https://console.groq.com) (free).
 
 ```bash
 # 1. Clone and enter the project
@@ -57,7 +57,7 @@ pip install -r requirements.txt
 
 # 4. Add your API key
 cp .env.example .env
-# Edit .env and paste your ANTHROPIC_API_KEY
+# Edit .env and paste your GROQ_API_KEY
 ```
 
 ---
@@ -163,7 +163,7 @@ langgraph-project/
 │   ├── state.py        # BloodTestState TypedDict
 │   ├── nodes.py        # Node factory functions (closure pattern)
 │   ├── graph.py        # StateGraph wiring
-│   └── pdf_parser.py   # PDF text extraction + Claude-powered parsing
+│   └── pdf_parser.py   # PDF text extraction + LLM-powered parsing
 ├── examples/
 │   └── sample_blood_test.json
 ├── app.py              # Streamlit UI
@@ -175,8 +175,8 @@ langgraph-project/
 
 ### Key design decisions
 
-- **Closure-based nodes** — each node factory takes an `anthropic.Anthropic` client and returns a plain function. No global state, easily testable.
-- **Adaptive thinking** — `thinking={"type": "adaptive"}` on the categorize and explain nodes lets Claude reason across the full panel before writing output — important for catching cross-value patterns (e.g. low MCV + low ferritin + low hemoglobin = iron deficiency, not three separate issues).
+- **Closure-based nodes** — each node factory takes a `Groq` client and returns a plain function. No global state, easily testable.
+- **Cross-value reasoning** — the explain node receives the full panel at once, so the model can catch patterns across values (e.g. low MCV + low ferritin + low hemoglobin = iron deficiency, not three separate issues).
 - **Streaming state accumulation** — `graph.stream()` is used so progress is printed as each node completes; state updates are merged into a local dict so the final report requires no second `invoke()` call.
 - **Patient context** — age, sex, conditions, and medications are injected into the explain and summary prompts, so reference ranges are interpreted for the actual person, not a generic adult.
 
@@ -186,7 +186,7 @@ langgraph-project/
 
 | Library | Role |
 |---|---|
-| `anthropic` | Claude Opus 4.8 with adaptive thinking |
+| `groq` | Llama 3.3 70B inference via Groq API |
 | `langgraph` | Multi-node agent graph orchestration |
 | `streamlit` | Browser UI with file upload and live progress |
 | `pdfplumber` | PDF text extraction |
